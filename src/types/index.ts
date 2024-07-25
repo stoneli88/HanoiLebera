@@ -1,11 +1,15 @@
 export interface ISeat {
   title: string
-  price?: number
-  isSold?: boolean
-  selected?: Array<ISeat>
+  status: boolean
 }
 
 export interface ITheater {
   title: string
-  seat?: Array<ISeat>
+  active?: boolean
+  seats: ISeat[][]
+}
+
+export interface ITheaterResponse {
+  title: string
+  seats: ISeat[]
 }
