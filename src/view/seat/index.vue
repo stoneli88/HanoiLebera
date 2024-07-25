@@ -1,6 +1,6 @@
 <template>
   <div class="hl-choose-seat__wrapper">
-    <van-nav-bar title="HANOI - LEBERA" left-arrow></van-nav-bar>
+    <van-nav-bar title="HANOI - LEBERA" fixed left-arrow></van-nav-bar>
     <div class="primary-container">
       <p class="second-title">11 MAR - 15 MAR</p>
       <p class="primary-title">Choose your seat</p>
@@ -34,7 +34,7 @@
         <section class="cinema-container">
           <div v-for="(theater, idx) in theaters" class="cinema-item" @click="toggleActive(idx)">
             <div :class="['box-cinema', { active: theater.active }]">{{ theater.title }}</div>
-            <div v-if="idx < theaters.length" class="gutter-cinema"></div>
+            <div v-if="idx < theaters.length - 1" class="gutter-cinema"></div>
           </div>
         </section>
       </section>
@@ -45,32 +45,45 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Cube from "@/components/Cube.vue";
-import { ISeat, ITheater, ITheaterResponse } from "@/types";
+import { ISeat, ITheater, ITheaterResponse } from '@/types';
 import { onMounted } from "vue";
 import axios from "axios";
 
 const theaters = ref<ITheater[]>([]);
+const seats = ref<ISeat[][]>([]);
 
 onMounted(async () => {
   try {
-    const response = await axios.get<ITheaterResponse[]>('data.json');
+    const timestamp = Date.now();
+    const response = await axios.get<ITheaterResponse[]>(`data.json?timestamp=${timestamp}`);
     const theatersResp:ITheaterResponse[] = response.data;
-    theatersResp.forEach(theater => {
-      const seats = theater.seats;
+    theatersResp.forEach((theater, idx) => {
+      const tempSeats = theater.seats;
       const tempGroupedSeats: ISeat[][] = [];
-      for (let i = 0; i < seats.length; i += 4) {
-        tempGroupedSeats.push(seats.slice(i, i + 4));
+      for (let i = 0; i < tempSeats.length; i += 4) {
+        tempGroupedSeats.push(tempSeats.slice(i, i + 4));
       }
       theaters.value.push({
         title: theater.title,
         seats: tempGroupedSeats,
-        active: false
+        active: idx === 0
       });
     });
+    seats.value = theaters.value[0].seats;
+    console.log(seats.value)
   } catch (error) {
     console.error('Failed to fetch seats:', error);
   }
 });
+
+function toggleActive(idx: number) {
+  theaters.value.forEach((theater, index) => {
+    theater.active = index === idx;
+    if (theater.active) {
+      seats.value = theater.seats;
+    }
+  });
+}
 </script>
 
 <style lang="scss" scoped>
@@ -94,7 +107,9 @@ onMounted(async () => {
     }
   }
   .primary-container {
+    height: calc(100vh - 46px);
     padding: 10px 12px;
+    margin-top: 46px;
   }
   .second-title {
     margin: 0;
@@ -145,6 +160,9 @@ onMounted(async () => {
     font-size: 16px;
     background-color: #191524;
     color: #fffeff;
+    &.active {
+      background-color: #D4797E;
+    }
   }
   .gutter-cinema {
     width: 10px;
